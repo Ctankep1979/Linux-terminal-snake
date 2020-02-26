@@ -4,7 +4,7 @@ int
 main(int argc, const char** argv)
 {
     Draw d;
-    d.updateFood();
+    d.update();
 
     return 0;
 }

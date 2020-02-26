@@ -10,9 +10,6 @@ using namespace std;
 enum
 Direction : uint8_t {eLeft, eRight, eUp, eDown, eStall};
 
-enum
-Oriention : uint8_t {oLeft, oRight, oUp, oDown};
-
 class
 Entity
 {
@@ -21,11 +18,17 @@ private:
     uint8_t _speed;         // speed of entity
     uint8_t _lenght;        // lenght of entity
 
+    uint8_t maxX;
+    uint8_t maxY;
+
     vector<uint8_t> x_tail; // vector of x positions of the entity in a 2D space
     vector<uint8_t> y_tail; // vector of y positions of the entity in a 2D space
     vector<char> shape;     // shape of entity for each block        
 public:
-    Entity(Direction d, uint8_t s, uint8_t l);
+    Entity(Direction d, uint8_t s, uint8_t l, uint8_t x, uint8_t  y, uint8_t maxX, uint8_t maxY);
+
+    void
+    setmax(uint8_t mx, uint8_t my){maxX = mx; maxY = my;}
 
     uint8_t
     getLenght() const {return _lenght;}
@@ -55,7 +58,10 @@ public:
     setPosition(vector<uint8_t> x, vector<uint8_t> y);
 
     bool
-    setShape(vector<char> shape, Oriention o);
+    setPosition(uint8_t x, uint8_t y);
+
+    bool
+    setShape(vector<char> shape, Direction d);
 
     vector<char>
     getShape(){return shape;}
@@ -88,7 +94,7 @@ private:
     const uint8_t MAXSIZE = 5;
 
 public:
-    Snake(uint8_t x, uint8_t y);
+    Snake(uint8_t x, uint8_t y, uint8_t maxX, uint8_t maxY);
 
 };
 
@@ -98,7 +104,7 @@ Food : public Entity
 {
 
 public:
-    Food(uint8_t x, uint8_t y);
+    Food(uint8_t x, uint8_t y, uint8_t maxX, uint8_t maxY);
 
 };
 

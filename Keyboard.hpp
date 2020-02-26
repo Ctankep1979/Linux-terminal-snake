@@ -26,6 +26,13 @@ namespace Ctankep
     public:
         Keyboard(const char* path);
         ~Keyboard();
+
+        Keyboard&
+        operator=(Keyboard& k){return k;}
+        
+        Keyboard&
+        operator=(Keyboard&& k){return k;}
+
         int keyPress();
         int keyRelease();
         int test();

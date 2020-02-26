@@ -1,30 +1,42 @@
 #include "draw.h"
 
-Draw::Draw(): _keyboard{"/dev/input/event12"}
+Ctankep::Keyboard Draw::_keyboard("/dev/input/event12");
+Snake *Draw::_snake;
+Food *Draw::_food;
+bool Draw::_run = false;
+int Draw::scrMaxX;
+int Draw::scrMaxY;
+
+Draw::Draw()
 {
-    
-    _snake = new Snake(2,2);
+    srand(time(NULL));
 }
 
 Draw::~Draw()
 {
-    delete _snake;
+    delete Draw::_snake;
+    delete Draw::_food;
+
 }
 
 void
 Draw::init()
 {
     initscr();
+    getmaxyx(stdscr, scrMaxY, scrMaxX);
     keypad(stdscr, TRUE);
     noecho();
     curs_set(0);
     cbreak();
-    //raw();
+    Draw::_snake = new Snake(1,15, scrMaxY, scrMaxX);
+    Draw::_food = new Food(10,10, scrMaxY, scrMaxX);
 }
 
 void
 Draw::deinit()
 {
+    getch();
+    Draw::_run = false;
     endwin();
 }
 
@@ -37,6 +49,8 @@ Draw::wait(int t)
 void
 Draw::drawEntity(std::vector<uint8_t> x, std::vector<uint8_t> y, vector<char> shape)
 {
+    int xp;
+    int yp;
     if(x.size() != y.size())
     {
         printw("ERROOR!");
@@ -45,72 +59,109 @@ Draw::drawEntity(std::vector<uint8_t> x, std::vector<uint8_t> y, vector<char> sh
 
     for(int i = x.size()-1;i >= 0 ;i--)
     {
-        mvaddch(x.at(i), y.at(i), shape.at(i));
+        xp = x.at(i);
+        yp = y.at(i);
+        
+        mvaddch(xp, yp, shape.at(i));
     }
 }
 
-
 void
-Draw::updateFood()
+Draw::update()
 {
-    bool loop = true;
-    _food = new Food(10,10);
+    uint16_t cnt = 0;
+    uint16_t time = rand()%100 + 100;
     init();
-    while(loop)
+    _entity_thread = thread(updateSnake);
+    _entity_thread.detach();
+    Draw::_run = true;
+    do
     {
-        //clear();
-        drawEntity(_food->getX(), _food->getY(), _food->getShape());
+        if(cnt++ > time)
+        {
+            time = updateFood(600);
+            cnt = 0;
+        }
+        clear();
+        drawEntity(Draw::_food->getX(), Draw::_food->getY(), Draw::_food->getShape());
+        drawEntity(_snake->getX(), _snake->getY(), _snake->getShape());
         refresh();
         wait(5);
-    }
+        
+    } while(Draw::_run);
+    clear();
+    printw("GAME OVER!");
+    refresh();
+    getch();
+    deinit();
 
 }
 
-void
-Draw::updateSnake()
+
+uint16_t
+Draw::updateFood(uint16_t offset)
 {
+    uint16_t time = rand()%100 + offset;
+    uint8_t newX;
+    uint8_t newY;
+    newX =  rand() % scrMaxY;
+    newY = rand() % scrMaxX;
+    Draw::_food->setPosition(newX, newY);
+    return time;
+}
+
+bool
+Draw::updateSnake()
+{ 
     int key = 0;
-    bool loop = true;
-    init();
-    while(loop)
+    bool run = false;
+    do
     {
         key = _keyboard.keyPress();
         switch (key)
         {
         case KEY_RIGHT:
-            clear();
             _snake->incY();
-            drawEntity(_snake->getX(), _snake->getY(), _snake->getShape());
             break;
 
         case KEY_LEFT:
-            clear();
             _snake->decY();
-            drawEntity(_snake->getX(), _snake->getY(), _snake->getShape());
             break;
 
         case KEY_UP:
-            clear();
             _snake->decX();
-            drawEntity(_snake->getX(), _snake->getY(), _snake->getShape());
             break;
 
         case KEY_DOWN:
-            clear();
             _snake->incX();
-            drawEntity(_snake->getX(), _snake->getY(), _snake->getShape());
             break;
         case KEY_ESC:
-            loop = false;
+            Draw::_run = false;
+            return false;
+            break;
+        case KEY_SPACE:
             break;
         default:
             break;
         }
-        refresh();
-        wait(5);
-        
+    if(Draw::_snake->getX().at(0) == Draw::_food->getX().at(0) && 
+                Draw::_snake->getY().at(0) == Draw::_food->getY().at(0))
+                {
+                    Draw::updateFood(600);
+                    _snake->incLenght();
+                }
+
+    for(int i=1;i < Draw::_snake->getLenght();i++)
+    {
+        if(Draw::_snake->getX().at(0) == _snake->getX().at(i) && 
+                Draw::_snake->getY().at(0) == Draw::_snake->getY().at(i) && run == true)
+                {
+                    Draw::_run = false;
+                    return false;
+                }
     }
-
-
-    deinit();
+    run = true;
+    } while(Draw::_run);
+    
+    return true; 
 }
